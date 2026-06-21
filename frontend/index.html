@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoTrack AI | Sustainable Carbon Tracker & Coach</title>
+  <meta name="description" content="Calculate, monitor, and reduce your carbon footprint with EcoTrack AI - featuring real-time calculators, gamification, and an intelligent sustainability coach.">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+            },
+            lime: {
+              500: '#84cc16',
+              600: '#65a30d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="min-h-screen text-slate-800 dark:text-slate-100 flex flex-col">
+
+  <!-- Header / Navigation -->
+  <header id="main-header" class="hidden glass-panel mx-4 mt-4 mb-2 px-6 py-4 flex items-center justify-between sticky top-4 z-40">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+        <i class="fa-solid fa-leaf text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-emerald-700 dark:text-emerald-500">EcoTrack AI</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Your carbon coach</p>
+      </div>
+    </div>
+    
+    <!-- Desktop Nav Links -->
+    <nav class="hidden lg:flex items-center gap-6">
+      <a href="#/dashboard" class="nav-link active" data-view="dashboard"><i class="fa-solid fa-chart-pie mr-2"></i>Dashboard</a>
+      <a href="#/calculator" class="nav-link" data-view="calculator"><i class="fa-solid fa-calculator mr-2"></i>Calculator</a>
+      <a href="#/coach" class="nav-link" data-view="coach"><i class="fa-solid fa-robot mr-2"></i>EcoGuide AI</a>
+      <a href="#/challenges" class="nav-link" data-view="challenges"><i class="fa-solid fa-trophy mr-2"></i>Challenges</a>
+      <a href="#/education" class="nav-link" data-view="education"><i class="fa-solid fa-graduation-cap mr-2"></i>Education</a>
+      <a href="#/community" class="nav-link" data-view="community"><i class="fa-solid fa-users mr-2"></i>Community</a>
+      <a href="#/reports" class="nav-link" data-view="reports"><i class="fa-solid fa-file-invoice mr-2"></i>Reports</a>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-4">
+      <!-- Dark mode switch -->
+      <button id="theme-toggle" class="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all" aria-label="Toggle dark mode">
+        <i id="theme-toggle-icon" class="fa-solid fa-moon text-slate-600 dark:text-yellow-400"></i>
+      </button>
+      
+      <!-- Notifications Indicator -->
+      <div class="relative">
+        <button id="notif-bell" class="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all">
+          <i class="fa-solid fa-bell"></i>
+          <span id="notif-badge" class="absolute -top-1 -right-1 h-3.5 w-3.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 hidden"></span>
+        </button>
+        <!-- Notifications Dropdown -->
+        <div id="notif-dropdown" class="absolute right-0 mt-3 w-80 glass-panel p-4 hidden flex-col gap-3 max-h-96 overflow-y-auto z-50">
+          <h4 class="font-bold text-sm border-b pb-2 flex justify-between items-center">
+            <span>Notifications</span>
+            <button id="notif-clear" class="text-xs text-emerald-600 font-semibold hover:underline">Clear all</button>
+          </h4>
+          <div id="notif-list" class="flex flex-col gap-2.5">
+            <p class="text-xs text-center text-slate-500 py-4">No new notifications</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile trigger -->
+      <button id="profile-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+        <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold" id="user-avatar-initial">U</div>
+        <span class="hidden md:inline text-sm font-semibold" id="username-display">User</span>
+      </button>
+
+      <!-- Logout Button -->
+      <button id="logout-btn" class="p-2.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all" title="Logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile navigation drawer trigger (Bottom Bar) -->
+  <footer id="mobile-nav" class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex justify-around py-3 px-4 z-40 hidden">
+    <a href="#/dashboard" class="flex flex-col items-center text-xs gap-1 text-slate-500" data-view="dashboard">
+      <i class="fa-solid fa-chart-pie text-lg"></i>Dashboard
+    </a>
+    <a href="#/calculator" class="flex flex-col items-center text-xs gap-1 text-slate-500" data-view="calculator">
+      <i class="fa-solid fa-calculator text-lg"></i>Calc
+    </a>
+    <a href="#/coach" class="flex flex-col items-center text-xs gap-1 text-slate-500" data-view="coach">
+      <i class="fa-solid fa-robot text-lg"></i>EcoGuide
+    </a>
+    <a href="#/challenges" class="flex flex-col items-center text-xs gap-1 text-slate-500" data-view="challenges">
+      <i class="fa-solid fa-trophy text-lg"></i>Goals
+    </a>
+    <a href="#/education" class="flex flex-col items-center text-xs gap-1 text-slate-500" data-view="education">
+      <i class="fa-solid fa-graduation-cap text-lg"></i>Hub
+    </a>
+  </footer>
+
+  <!-- Main Viewport -->
+  <main class="flex-1 container mx-auto px-4 py-4 mb-20 lg:mb-6">
+
+    <!-- VIEW 0: AUTHENTICATION MODULE -->
+    <div id="view-auth" class="max-w-md mx-auto my-16 animate-fade-in">
+      
+      <!-- Login Card -->
+      <div id="auth-login-card" class="glass-panel p-8 flex flex-col gap-6">
+        <div class="text-center">
+          <div class="inline-flex h-14 w-14 bg-emerald-600 text-white rounded-2xl items-center justify-center text-2xl shadow-xl shadow-emerald-500/20 mb-4">
+            <i class="fa-solid fa-leaf"></i>
+          </div>
+          <h2 class="text-2xl font-bold">Welcome to EcoTrack AI</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to track carbon emissions and earn badges</p>
+        </div>
+
+        <form id="login-form" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Username</label>
+            <input type="text" id="login-username" class="glass-input" placeholder="Enter username" required>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Password</label>
+            <input type="password" id="login-password" class="glass-input" placeholder="••••••••" required>
+          </div>
+          <div class="flex justify-between items-center text-xs">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="login-remember" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+              Remember Me
+            </label>
+            <button type="button" id="forgot-password-btn" class="text-emerald-600 font-semibold hover:underline">Forgot Password?</button>
+          </div>
+          <button type="submit" class="btn-glass-primary py-3 mt-2 w-full">Sign In</button>
+        </form>
+
+        <div class="relative flex items-center justify-center my-1 text-xs text-slate-400 uppercase">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-300 dark:border-slate-700"></div></div>
+          <span class="relative bg-white dark:bg-slate-900 px-3 z-10">New to the platform?</span>
+        </div>
+
+        <button id="go-to-register-btn" class="btn-glass-secondary py-3 w-full">Create Account</button>
+      </div>
+
+      <!-- Register Card -->
+      <div id="auth-register-card" class="glass-panel p-8 flex flex-col gap-6 hidden">
+        <div class="text-center">
+          <h2 class="text-2xl font-bold">Create EcoTrack Account</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Join global eco warriors reducing carbon emissions</p>
+        </div>
+
+        <form id="register-form" class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-semibold">First Name</label>
+              <input type="text" id="register-fname" class="glass-input" placeholder="Jane" required>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-semibold">Last Name</label>
+              <input type="text" id="register-lname" class="glass-input" placeholder="Doe" required>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Username</label>
+            <input type="text" id="register-username" class="glass-input" placeholder="janedoe" required>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Email Address</label>
+            <input type="email" id="register-email" class="glass-input" placeholder="jane@example.com" required>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Password</label>
+            <input type="password" id="register-password" class="glass-input" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn-glass-primary py-3 mt-2 w-full">Sign Up</button>
+        </form>
+
+        <div class="relative flex items-center justify-center my-1 text-xs text-slate-400 uppercase">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-300 dark:border-slate-700"></div></div>
+          <span class="relative bg-white dark:bg-slate-900 px-3 z-10">Already have account?</span>
+        </div>
+
+        <button id="go-to-login-btn" class="btn-glass-secondary py-3 w-full">Sign In instead</button>
+      </div>
+
+      <!-- Forgot/Reset Password Card -->
+      <div id="auth-forgot-card" class="glass-panel p-8 flex flex-col gap-6 hidden">
+        <div class="text-center">
+          <h2 class="text-2xl font-bold">Reset Password</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Enter your email link to set new password credentials</p>
+        </div>
+
+        <form id="forgot-form" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Email Address</label>
+            <input type="email" id="forgot-email" class="glass-input" placeholder="email@ecotrack.ai" required>
+          </div>
+          <button type="submit" class="btn-glass-primary py-3 w-full">Send Reset Link</button>
+        </form>
+
+        <!-- Hidden inputs for confirmation mock -->
+        <form id="reset-confirm-form" class="flex flex-col gap-4 hidden">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">New Password</label>
+            <input type="password" id="reset-password-val" class="glass-input" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn-glass-primary py-3 w-full">Apply New Password</button>
+        </form>
+
+        <button id="forgot-back-btn" class="text-center text-xs text-slate-500 font-semibold hover:underline">Back to Login</button>
+      </div>
+    </div>
+
+
+    <!-- VIEW 1: DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view-section hidden animate-fade-in flex flex-col gap-6">
+      
+      <!-- Top profile streak level bar -->
+      <div class="glass-panel p-6 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="h-16 w-16 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl font-extrabold" id="dash-avatar-icon">
+            <i class="fa-solid fa-seedling"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <span id="dash-welcome">Hello, Eco Warrior!</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-600 text-white" id="dash-level">Seed</span>
+            </h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-3">
+              <span>Points: <b id="dash-points" class="text-emerald-600">0</b> pts</span>
+              <span>•</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-fire text-orange-500"></i> Streak: <b id="dash-streak">0</b> Days</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <a href="#/calculator" class="btn-glass-primary px-5 py-2.5 flex items-center gap-2 text-sm">
+            <i class="fa-solid fa-plus"></i> Log Carbon Footprint
+          </a>
+        </div>
+      </div>
+
+      <!-- Summary metrics cards grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="glass-panel p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span class="text-sm font-semibold">Total Carbon Logged</span>
+            <i class="fa-solid fa-earth-americas text-emerald-600 text-lg"></i>
+          </div>
+          <div class="mt-4">
+            <h4 class="text-2xl font-bold tracking-tight"><span id="metric-total-co2">0.00</span> <span class="text-sm font-normal text-slate-400">kg CO₂</span></h4>
+            <p class="text-xs text-slate-400 mt-1">Cumulative lifetime tracking</p>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass-panel p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span class="text-sm font-semibold">Monthly Emissions</span>
+            <i class="fa-solid fa-calendar-days text-lime-600 text-lg"></i>
+          </div>
+          <div class="mt-4">
+            <h4 class="text-2xl font-bold tracking-tight"><span id="metric-monthly-co2">0.00</span> <span class="text-sm font-normal text-slate-400">kg CO₂</span></h4>
+            <div class="flex items-center gap-1.5 mt-1">
+              <span class="text-xs text-slate-400">Target Budget:</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400" id="metric-budget">500 kg</span>
+            </div>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="glass-panel p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span class="text-sm font-semibold">Carbon Reduction</span>
+            <i class="fa-solid fa-arrow-down-long text-blue-600 text-lg"></i>
+          </div>
+          <div class="mt-4">
+            <h4 class="text-2xl font-bold tracking-tight"><span id="metric-reduction">0.00</span> <span class="text-sm font-normal text-slate-400">kg CO₂</span></h4>
+            <p class="text-xs text-emerald-600 mt-1 font-semibold flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> vs average regional user</p>
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="glass-panel p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span class="text-sm font-semibold">Trees Saved</span>
+            <i class="fa-solid fa-tree text-green-600 text-lg"></i>
+          </div>
+          <div class="mt-4">
+            <h4 class="text-2xl font-bold tracking-tight"><span id="metric-trees">0.00</span> <span class="text-sm font-normal text-slate-400">Trees</span></h4>
+            <p class="text-xs text-slate-400 mt-1">Equivalent absorption offset</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts grid and details -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Carbon Footprint Trend Chart (2 columns span on large screens) -->
+        <div class="lg:col-span-2 glass-panel p-6 flex flex-col gap-4">
+          <div class="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
+            <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-600"></i> Emissions Trend</h4>
+            
+            <!-- Tab switches for Line/Bar Chart -->
+            <div class="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700">
+              <button class="px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-900 shadow-sm transition-all" id="chart-tab-daily">Daily</button>
+              <button class="px-3 py-1 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-all" id="chart-tab-weekly">Weekly</button>
+              <button class="px-3 py-1 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-all" id="chart-tab-monthly">Monthly</button>
+            </div>
+          </div>
+          
+          <div class="relative h-72 w-full flex items-center justify-center">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right: Category breakdown (Donut chart) -->
+        <div class="glass-panel p-6 flex flex-col gap-4">
+          <div class="border-b pb-3 border-slate-200 dark:border-slate-800">
+            <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-chart-donut text-lime-600"></i> Category Breakdown</h4>
+          </div>
+          <div class="relative h-60 w-full flex items-center justify-center">
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <div id="category-legend" class="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-2">
+            <!-- Dynamically populated legend details -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Second charts line: User vs benchmark comparatives -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: comparative bar chart -->
+        <div class="glass-panel p-6 flex flex-col gap-4 lg:col-span-2">
+          <div class="border-b pb-3 border-slate-200 dark:border-slate-800">
+            <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-sliders text-blue-600"></i> Category Footprint Benchmarking</h4>
+          </div>
+          <div class="relative h-64 w-full flex items-center justify-center">
+            <canvas id="comparisonChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right: Badges and completed accomplishments summary -->
+        <div class="glass-panel p-6 flex flex-col gap-4">
+          <div class="border-b pb-3 border-slate-200 dark:border-slate-800 flex justify-between items-center">
+            <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-medal text-orange-500"></i> Achievements</h4>
+            <a href="#/challenges" class="text-xs text-emerald-600 font-semibold hover:underline">View badges</a>
+          </div>
+          
+          <div id="dash-badges-grid" class="grid grid-cols-3 gap-4 py-2">
+            <!-- Populated with unlocked badge cards -->
+          </div>
+          
+          <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-auto">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-semibold text-slate-500">Sustainability Level:</span>
+              <span id="dash-level-percentage" class="font-bold text-emerald-600">Level 1 (Seed)</span>
+            </div>
+            <!-- Level progress bar -->
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+              <div id="dash-level-progressbar" class="bg-emerald-500 h-full rounded-full transition-all" style="width: 20%"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 2: CARBON FOOTPRINT CALCULATOR -->
+    <div id="view-calculator" class="view-section hidden animate-fade-in flex flex-col gap-6 max-w-4xl mx-auto">
+      <div class="glass-panel p-6">
+        <h2 class="text-2xl font-bold tracking-tight">Carbon Footprint Calculator</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Select a category below to log your sustainability emissions.</p>
+        
+        <!-- Tabs selectors for Calculator Categories -->
+        <div class="grid grid-cols-5 gap-2 mt-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+          <button class="calc-tab active flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-lg bg-white dark:bg-slate-900 shadow-sm text-sm font-semibold text-emerald-600 transition-all" data-category="transport">
+            <i class="fa-solid fa-car"></i> <span class="hidden md:inline">Transport</span>
+          </button>
+          <button class="calc-tab flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-lg text-slate-500 text-sm font-semibold transition-all" data-category="energy">
+            <i class="fa-solid fa-plug"></i> <span class="hidden md:inline">Energy</span>
+          </button>
+          <button class="calc-tab flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-lg text-slate-500 text-sm font-semibold transition-all" data-category="food">
+            <i class="fa-solid fa-utensils"></i> <span class="hidden md:inline">Food</span>
+          </button>
+          <button class="calc-tab flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-lg text-slate-500 text-sm font-semibold transition-all" data-category="shopping">
+            <i class="fa-solid fa-bag-shopping"></i> <span class="hidden md:inline">Shopping</span>
+          </button>
+          <button class="calc-tab flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-lg text-slate-500 text-sm font-semibold transition-all" data-category="waste">
+            <i class="fa-solid fa-trash-can"></i> <span class="hidden md:inline">Waste</span>
+          </button>
+        </div>
+
+        <!-- Calculator Questionnaire Container -->
+        <form id="calculator-form" class="mt-6 flex flex-col gap-6">
+          <input type="hidden" id="calc-current-category" value="transport">
+          
+          <!-- Category 1: Transport Form -->
+          <div id="calc-form-transport" class="calc-form-block flex flex-col gap-4">
+            <h3 class="font-bold text-lg border-b pb-2 mb-2 flex items-center gap-2 text-emerald-600">
+              <i class="fa-solid fa-car"></i> Transportation details
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Car Distance (km / week)</label>
+                <input type="number" id="calc-transport-car" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Car Fuel Type</label>
+                <select id="calc-transport-fuel" class="glass-input">
+                  <option value="petrol">Petrol (Gasoline)</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="electric">Electric (EV)</option>
+                  <option value="hybrid">Hybrid (HEV)</option>
+                  <option value="phev">Plug-in Hybrid (PHEV)</option>
+                  <option value="cng">CNG (Compressed Natural Gas)</option>
+                  <option value="lpg">LPG (Liquefied Petroleum Gas)</option>
+                  <option value="biodiesel">Biodiesel</option>
+                  <option value="ethanol">Ethanol (E85)</option>
+                  <option value="hydrogen">Hydrogen Fuel Cell</option>
+                  <option value="mild_hybrid">Mild Hybrid (MHEV)</option>
+                  <option value="flex_fuel">Flex-Fuel</option>
+                  <option value="synthetic">Synthetic E-Fuel</option>
+                  <option value="solar_ev">Solar-assisted EV</option>
+                  <option value="petrol_cng">Petrol + CNG Hybrid</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Motorcycle/Bike Distance (km / week)</label>
+                <input type="number" id="calc-transport-bike" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Bus Ride Distance (km / week)</label>
+                <input type="number" id="calc-transport-bus" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Train Ride Distance (km / week)</label>
+                <input type="number" id="calc-transport-train" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Air Travel Distance (km / year total)</label>
+                <input type="number" id="calc-transport-flight" class="glass-input" value="0" min="0">
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5 mt-2">
+              <label class="text-sm font-semibold">Trips Per Week (Scaling multiplier factor)</label>
+              <input type="range" id="calc-transport-trips" min="1" max="15" value="1" class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
+                <span>1 trip/wk</span>
+                <span class="font-bold text-emerald-600" id="calc-transport-trips-value">1 trip</span>
+                <span>15 trips/wk</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category 2: Energy Form -->
+          <div id="calc-form-energy" class="calc-form-block flex flex-col gap-4 hidden">
+            <h3 class="font-bold text-lg border-b pb-2 mb-2 flex items-center gap-2 text-lime-600">
+              <i class="fa-solid fa-plug"></i> Home Energy Consumption
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Electricity Consumption (kWh / month)</label>
+                <input type="number" id="calc-energy-electricity" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">LPG Cooking Gas (kg / month)</label>
+                <input type="number" id="calc-energy-lpg" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Air Conditioner Runtime (hours / week)</label>
+                <input type="number" id="calc-energy-ac" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Heavy Appliances Runtime (hours / week)</label>
+                <input type="number" id="calc-energy-appliances" class="glass-input" value="0" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Category 3: Food Form -->
+          <div id="calc-form-food" class="calc-form-block flex flex-col gap-4 hidden">
+            <h3 class="font-bold text-lg border-b pb-2 mb-2 flex items-center gap-2 text-red-500">
+              <i class="fa-solid fa-utensils"></i> Food Habits & Waste
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Diet Type</label>
+                <select id="calc-food-diet" class="glass-input">
+                  <option value="vegan">Vegan (No animal products)</option>
+                  <option value="vegetarian">Vegetarian (Dairy, no eggs/meat)</option>
+                  <option value="eggetarian">Eggetarian (Eggs and dairy, no meat)</option>
+                  <option value="non_veg">Non-Vegetarian (Regular meat consumption)</option>
+                  <option value="pescatarian">Pescatarian (Fish & veggies)</option>
+                  <option value="flexitarian">Flexitarian (Semi-vegetarian)</option>
+                  <option value="keto">Keto (High fat, low carb)</option>
+                  <option value="paleo">Paleo (Caveman diet)</option>
+                  <option value="mediterranean">Mediterranean Diet</option>
+                  <option value="carnivore">Carnivore (Meat-only)</option>
+                  <option value="low_carb">Low-Carb Diet</option>
+                  <option value="gluten_free">Gluten-Free Diet</option>
+                  <option value="dairy_free">Dairy-Free Diet</option>
+                  <option value="whole30">Whole30 Diet</option>
+                  <option value="raw_vegan">Raw Vegan</option>
+                  <option value="plant_based">Plant-Based Diet</option>
+                  <option value="low_fodmap">Low-FODMAP Diet</option>
+                  <option value="fruitarian">Fruitarian (Fruit-only)</option>
+                  <option value="halal">Halal Diet</option>
+                  <option value="kosher">Kosher Diet</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Weekly Food Wastage (kg)</label>
+                <input type="number" id="calc-food-waste" class="glass-input" value="0" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Category 4: Shopping Form -->
+          <div id="calc-form-shopping" class="calc-form-block flex flex-col gap-4 hidden">
+            <h3 class="font-bold text-lg border-b pb-2 mb-2 flex items-center gap-2 text-blue-500">
+              <i class="fa-solid fa-bag-shopping"></i> Shopping Habits
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Clothes Purchased (items / month)</label>
+                <input type="number" id="calc-shopping-clothes" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Electronics Purchased (devices / year)</label>
+                <input type="number" id="calc-shopping-electronics" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Online Shopping Orders (deliveries / month)</label>
+                <input type="number" id="calc-shopping-online" class="glass-input" value="0" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Category 5: Waste Form -->
+          <div id="calc-form-waste" class="calc-form-block flex flex-col gap-4 hidden">
+            <h3 class="font-bold text-lg border-b pb-2 mb-2 flex items-center gap-2 text-indigo-500">
+              <i class="fa-solid fa-trash-can"></i> Waste & Water Management
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Plastic Usage (kg / week)</label>
+                <input type="number" id="calc-waste-plastic" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Recycled Materials (kg / week)</label>
+                <input type="number" id="calc-waste-recycled" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">Water Usage (kL / month - 1kL=1000L)</label>
+                <input type="number" id="calc-waste-water" class="glass-input" value="0" min="0">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold">General Trash Generation (kg / week)</label>
+                <input type="number" id="calc-waste-general" class="glass-input" value="0" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Estimation Display Card -->
+          <div class="p-6 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl flex items-center justify-between mt-4">
+            <div>
+              <h4 class="font-bold text-emerald-800 dark:text-emerald-300 text-sm">Estimated Emissions for this category</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calculates footprint dynamically using scientific coefficients.</p>
+            </div>
+            <div class="text-right">
+              <h2 class="text-3xl font-extrabold text-emerald-600" id="calc-live-co2">0.00</h2>
+              <span class="text-xs text-slate-400">kg CO₂</span>
+            </div>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="flex justify-end gap-3 mt-4">
+            <button type="button" id="calc-reset" class="btn-glass-secondary px-6 py-3">Reset Fields</button>
+            <button type="submit" class="btn-glass-primary px-8 py-3"><i class="fa-solid fa-circle-check mr-2"></i>Record Entry</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Past entries logs table -->
+      <div class="glass-panel p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Past Emissions Log</h3>
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold">
+                <th class="py-3">Date</th>
+                <th class="py-3">Category</th>
+                <th class="py-3">Inputs Breakdown</th>
+                <th class="py-3 text-right">Emissions (kg CO₂)</th>
+                <th class="py-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="calc-entries-tbody">
+              <!-- Dynamically rendered past entries rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 3: ECOGUIDE AI ASSISTANT -->
+    <div id="view-coach" class="view-section hidden animate-fade-in flex flex-col gap-6 max-w-4xl mx-auto">
+      <div class="glass-panel p-6 flex flex-col h-[600px]">
+        <!-- Coach Header -->
+        <div class="flex items-center gap-3 border-b pb-4 border-slate-200 dark:border-slate-800">
+          <div class="h-12 w-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold">EcoGuide AI</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Sustainability Coach & Expert System</p>
+          </div>
+        </div>
+
+        <!-- Chat messages view panel -->
+        <div id="coach-chat-box" class="flex-1 overflow-y-auto py-4 flex flex-col gap-4 my-2 px-1">
+          <!-- Initial bot greeting -->
+          <div class="flex items-start gap-3 max-w-[80%]">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center flex-shrink-0 text-sm font-bold">AI</div>
+            <div class="p-3.5 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm leading-relaxed">
+              Hi, I am EcoGuide AI, your personalized sustainability coach! I am ready to analyze your carbon footprint entries, forecast future emissions, or help you structure weekly and monthly carbon reduction goals.
+              <br><br>
+              Try asking me:
+              <ul class="list-disc pl-5 mt-2 flex flex-col gap-1">
+                <li><button class="chat-prompt-link text-emerald-600 font-semibold hover:underline text-left">Explain my carbon footprint breakdown</button></li>
+                <li><button class="chat-prompt-link text-emerald-600 font-semibold hover:underline text-left">Give me a weekly plan to reduce emissions</button></li>
+                <li><button class="chat-prompt-link text-emerald-600 font-semibold hover:underline text-left">Forecast my future carbon emissions</button></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggestions chips line -->
+        <div class="flex flex-wrap gap-2 py-2 text-xs border-t border-slate-100 dark:border-slate-900">
+          <button class="chat-chip px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 hover:text-emerald-700 transition-all">What is carbon footprint?</button>
+          <button class="chat-chip px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 hover:text-emerald-700 transition-all">List eco-friendly alternatives</button>
+          <button class="chat-chip px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 hover:text-emerald-700 transition-all">How does plastic affect emissions?</button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="coach-chat-form" class="flex gap-2 items-center mt-2">
+          <input type="text" id="coach-chat-input" class="glass-input flex-1 py-3" placeholder="Ask your carbon coach..." required>
+          <button type="submit" class="btn-glass-primary px-6 py-3 self-stretch flex items-center justify-center">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- VIEW 4: CHALLENGES & LEADERBOARDS -->
+    <div id="view-challenges" class="view-section hidden animate-fade-in flex flex-col gap-6">
+      
+      <!-- Top Badges Showcase panel -->
+      <div class="glass-panel p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-shield text-orange-500"></i> Gamification Badges</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Unlock these badges by saving emissions, earning points and completing quizzes.</p>
+        <div id="badges-showcase-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2">
+          <!-- Populated with locked/unlocked state badges -->
+        </div>
+      </div>
+
+      <!-- Challenges list & Leaderboard split grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Sustainability Challenges (2 columns span) -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          <div class="glass-panel p-6 flex flex-col gap-4">
+            <h3 class="font-bold text-lg flex items-center gap-2 border-b pb-3 border-slate-200 dark:border-slate-800"><i class="fa-solid fa-flag text-emerald-600"></i> Active & Available Challenges</h3>
+            
+            <div id="challenges-list" class="flex flex-col gap-4">
+              <!-- Dynamically populated challenges cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Leaderboard Rankings -->
+        <div class="glass-panel p-6 flex flex-col gap-4">
+          <h3 class="font-bold text-lg flex items-center gap-2 border-b pb-3 border-slate-200 dark:border-slate-800"><i class="fa-solid fa-ranking-star text-yellow-500"></i> Global Leaderboard</h3>
+          
+          <div class="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1" id="leaderboard-list">
+            <!-- Dynamic users list -->
+          </div>
+
+          <!-- Logged user current rank bar -->
+          <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl flex items-center justify-between mt-auto" id="leaderboard-user-rankbar">
+            <div class="flex items-center gap-3">
+              <span class="font-black text-emerald-600 text-lg">#<span id="lb-user-rank">1</span></span>
+              <div>
+                <h4 class="font-bold text-sm" id="lb-user-username">You</h4>
+                <p class="text-xs text-slate-400" id="lb-user-level">Seed</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <h4 class="font-extrabold text-emerald-600 text-sm"><span id="lb-user-points">0</span> pts</h4>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 5: EDUCATIONAL HUB -->
+    <div id="view-education" class="view-section hidden animate-fade-in flex flex-col gap-6">
+      
+      <!-- Hub Intro -->
+      <div class="glass-panel p-6">
+        <h2 class="text-2xl font-bold">Educational Hub & Quizzes</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Read articles on clean living and take quizzes to earn Green Points.</p>
+      </div>
+
+      <!-- Articles list grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Interactive Quizzes Card -->
+        <div class="glass-panel p-6 border-2 border-emerald-500/30 flex flex-col gap-4 lg:col-span-3">
+          <h3 class="font-bold text-lg text-emerald-600 flex items-center gap-2"><i class="fa-solid fa-circle-question"></i> Available Sustainability Quizzes</h3>
+          <div id="quizzes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+            <!-- Quiz cards -->
+          </div>
+        </div>
+
+        <!-- Articles list -->
+        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="articles-grid">
+          <!-- Article items loaded dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 6: COMMUNITY MODULE -->
+    <div id="view-community" class="view-section hidden animate-fade-in flex flex-col gap-6 max-w-4xl mx-auto">
+      
+      <!-- Share Tip panel -->
+      <div class="glass-panel p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-pen-nib text-emerald-600"></i> Share Sustainability Tips</h3>
+        <form id="community-create-form" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <input type="text" id="community-title" class="glass-input font-bold" placeholder="Tip title (e.g. Setting up a compost box...)" required>
+          </div>
+          <div class="flex flex-col gap-1">
+            <textarea id="community-content" rows="3" class="glass-input text-sm" placeholder="Write detailed instructions or accomplishments..." required></textarea>
+          </div>
+          <div class="flex justify-between items-center mt-1">
+            <span class="text-xs text-slate-400 flex items-center gap-1"><i class="fa-solid fa-gift"></i> Earn +5 Green Points on post creation</span>
+            <button type="submit" class="btn-glass-primary px-6 py-2.5 text-sm">Post to Forum</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Posts Stream feed -->
+      <div class="flex flex-col gap-4" id="community-posts-stream">
+        <!-- Community posts rendered here -->
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 7: REPORTS MODULE -->
+    <div id="view-reports" class="view-section hidden animate-fade-in flex flex-col gap-6 max-w-2xl mx-auto">
+      <div class="glass-panel p-6 flex flex-col gap-5">
+        <h2 class="text-2xl font-bold tracking-tight">Sustainability Reporting Center</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">Generate and download standard analytical summaries of carbon footprints.</p>
+        
+        <form id="report-generate-form" class="flex flex-col gap-4 mt-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Report Time Range</label>
+            <select id="report-range" class="glass-input">
+              <option value="Daily">Daily Report (Today)</option>
+              <option value="Weekly">Weekly Report (Last 7 Days)</option>
+              <option value="Monthly" selected>Monthly Report (Last 30 Days)</option>
+              <option value="Annual">Annual Report (Last 365 Days)</option>
+            </select>
+          </div>
+          
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold">Download Format</label>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="cursor-pointer border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-center flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all" id="lbl-format-pdf">
+                <input type="radio" name="report-format" value="PDF" checked class="accent-emerald-500">
+                <i class="fa-solid fa-file-pdf text-red-500 text-xl"></i>
+                <span class="text-xs font-semibold">PDF Format</span>
+              </label>
+              <label class="cursor-pointer border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-center flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all" id="lbl-format-excel">
+                <input type="radio" name="report-format" value="Excel" class="accent-emerald-500">
+                <i class="fa-solid fa-file-excel text-green-500 text-xl"></i>
+                <span class="text-xs font-semibold">Excel Format</span>
+              </label>
+              <label class="cursor-pointer border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-center flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all" id="lbl-format-csv">
+                <input type="radio" name="report-format" value="CSV" class="accent-emerald-500">
+                <i class="fa-solid fa-file-csv text-blue-500 text-xl"></i>
+                <span class="text-xs font-semibold">CSV Flat Log</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-glass-primary py-3.5 mt-3"><i class="fa-solid fa-download mr-2"></i>Generate & Download Report</button>
+        </form>
+      </div>
+
+      <!-- Generated reports list -->
+      <div class="glass-panel p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg"><i class="fa-solid fa-list-check text-slate-500 mr-2"></i> Generated Report Archives</h3>
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold">
+                <th class="py-3">Date</th>
+                <th class="py-3">Report Detail</th>
+                <th class="py-3">Format</th>
+                <th class="py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="generated-reports-tbody">
+              <!-- Dynamically rendered generated reports list -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- VIEW 8: INTERACTIVE QUIZ DIALOGUE MODAL -->
+  <dialog id="quiz-modal" class="glass-panel p-6 max-w-xl w-full border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 backdrop:bg-black/40">
+    <div class="flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
+        <h3 class="font-bold text-lg" id="quiz-modal-title">Quiz: Carbon 101</h3>
+        <button id="quiz-modal-close" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      
+      <!-- Question index progress indicator -->
+      <div class="text-xs font-bold text-emerald-600 flex justify-between">
+        <span>Question <span id="quiz-question-current">1</span> of <span id="quiz-question-total">3</span></span>
+        <span>Points: <span id="quiz-points-val">50</span> pts</span>
+      </div>
+
+      <div class="py-2">
+        <h4 class="font-bold text-base leading-snug" id="quiz-question-text">Loading question...?</h4>
+        
+        <!-- Options List -->
+        <div class="flex flex-col gap-2.5 mt-4" id="quiz-options-container">
+          <!-- Option triggers buttons -->
+        </div>
+      </div>
+
+      <!-- Quiz actions -->
+      <div class="flex justify-end gap-3 border-t pt-4 border-slate-200 dark:border-slate-800 mt-2">
+        <button id="quiz-next-btn" class="btn-glass-primary px-6 py-2.5 text-sm hidden">Next Question</button>
+        <button id="quiz-submit-btn" class="btn-glass-primary px-6 py-2.5 text-sm hidden">Submit Answers</button>
+      </div>
+    </div>
+  </dialog>
+
+
+  <!-- VIEW 9: POST COMMENTS LIST MODAL -->
+  <dialog id="comment-modal" class="glass-panel p-6 max-w-2xl w-full border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 backdrop:bg-black/40">
+    <div class="flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
+        <h3 class="font-bold text-lg" id="comment-modal-title">Comments</h3>
+        <button id="comment-modal-close" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+
+      <!-- Comment threads box -->
+      <div class="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1" id="comment-list-box">
+        <!-- Rendered comments -->
+      </div>
+
+      <!-- Add comment form -->
+      <form id="comment-add-form" class="flex gap-2 items-center border-t pt-4 border-slate-200 dark:border-slate-800 mt-2">
+        <input type="hidden" id="comment-target-post-id" value="">
+        <input type="text" id="comment-input" class="glass-input flex-1 py-2.5 text-sm" placeholder="Write comment details..." required>
+        <button type="submit" class="btn-glass-primary px-5 py-2.5 text-sm">Add Comment</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Global Message Toast Alert -->
+  <div id="toast" class="fixed bottom-5 right-5 px-5 py-3.5 rounded-xl text-white font-semibold flex items-center gap-2 shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300">
+    <i class="fa-solid fa-circle-info"></i>
+    <span id="toast-message">Message toast</span>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex-col items-center justify-center gap-3">
+    <div class="h-10 w-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+    <span class="text-xs font-bold text-white uppercase tracking-wider">Processing Request...</span>
+  </div>
+
+  <!-- App Main Logic Controller Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
